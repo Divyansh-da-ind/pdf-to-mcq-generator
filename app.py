@@ -26,8 +26,6 @@ st.caption("Upload a PDF, generate multiple‑choice questions, answer them, and
 
 import random
 
-# ---------- Helper Functions ----------
-
 def initialize_vector_store(chunks: List[str], embeddings: List[List[float]]) -> VectorStore:
     """Create a FAISS vector store and add embeddings for the given chunks."""
     if not embeddings:
@@ -47,9 +45,7 @@ def retrieve_relevant_chunks(store: VectorStore, query: str, k: int = FAISS_TOP_
     # Retrieve more candidates than needed to allow for random selection
     candidate_k = k * 3 
     results = store.search(query_emb, k=candidate_k)
-    
-    # results is a list of (chunk_text, distance)
-    # Randomly select 'k' chunks from the larger pool of relevant chunks
+
     num_to_select = min(k, len(results))
     selected_results = random.sample(results, num_to_select)
     
@@ -59,7 +55,6 @@ def retrieve_relevant_chunks(store: VectorStore, query: str, k: int = FAISS_TOP_
     retrieved = " ".join([chunk for chunk, _ in selected_results])
     return retrieved
 
-# ---------- Session State ----------
 if "mcqs" not in st.session_state:
     st.session_state.mcqs = []  # List of dicts from Gemini
 if "answers" not in st.session_state:
@@ -69,7 +64,6 @@ if "store" not in st.session_state:
 if "pdf_processed" not in st.session_state:
     st.session_state.pdf_processed = False
 
-# ---------- File Upload ----------
 uploaded_file = st.file_uploader("Upload your PDF document", type=["pdf"])
 
 
@@ -123,7 +117,6 @@ if uploaded_file is not None:
         with st.expander("View extracted text preview"):
             st.code(st.session_state.get("preview_text", ""))
 
-# ---------- MCQ Generation Controls ----------
 if st.session_state.pdf_processed:
     difficulty = st.selectbox("Select exam difficulty", options=["Easy", "Medium", "Hard"], index=0)
     num_mcqs = st.slider("Number of MCQs to generate", min_value=1, max_value=20, value=5)
@@ -142,8 +135,6 @@ if st.session_state.pdf_processed:
         st.session_state.q_start_time = time.time()
         st.success(f"Generated {len(mcqs)} MCQs.")
 
-# ---------- MCQ Display & Answer Collection ----------
-# ---------- MCQ Display & Answer Collection ----------
 if st.session_state.mcqs:
     # Initialize session state for the quiz flow if not present
     if "current_q_index" not in st.session_state:
@@ -169,7 +160,6 @@ if st.session_state.mcqs:
         options = mcq.get("options", {})
         option_labels = ["A", "B", "C", "D"]
         
-        # Display Radio Button
         selected_opt = st.radio(
             "Select your answer:",
             option_labels,
@@ -211,15 +201,12 @@ if st.session_state.mcqs:
             correct_answers = sum([1 for r in results if r['selected'] == r['correct']])
             avg_time = sum([r['time_taken'] for r in results]) / total_answered
             
-            # Metrics
             c1, c2, c3 = st.columns(3)
             c1.metric("Score", f"{correct_answers}/{total_answered}")
             c2.metric("Accuracy", f"{(correct_answers/total_answered)*100:.1f}%")
             c3.metric("Avg Time/Question", f"{avg_time:.2f}s")
             
             st.divider()
-
-            # Question-by-Question Review
             st.subheader("🔍 Detailed Review")
             for idx, res in enumerate(results):
                 with st.expander(f"Q{idx+1}: {res['question']} ({'✅ Correct' if res['selected'] == res['correct'] else '❌ Incorrect'})"):
@@ -235,7 +222,6 @@ if st.session_state.mcqs:
 
             st.divider()
             
-            # Matplotlib Analysis
             st.subheader("📊 Performance Analytics")
             
             col_chart1, col_chart2 = st.columns(2)
@@ -266,8 +252,6 @@ if st.session_state.mcqs:
                 ax2.set_title("Accuracy Breakdown")
                 st.pyplot(fig2)
 
-            # Generate Detailed Analysis (LLM)
-            # Adapt data for generate_exam_analysis
             user_responses_formatted = [
                 {
                     "question": r["question"],
@@ -294,5 +278,5 @@ if st.session_state.mcqs:
             st.session_state.q_start_time = time.time()
             st.rerun()
 
-# ---------- Footer ----------
-st.caption("Powered by Divyansh • Built with Streamlit")
+st.caption("Powered by Divyansh")
+
